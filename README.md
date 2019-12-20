@@ -8,4 +8,8 @@
 
 ## Tecnologia
 
-- [Python](https://www.python.org/) ```3.7.4```
+- [QT Creator](https://www.qt.io/) ```4.10.2```
+- [Python](https://www.python.org/) ```3.8```
+- [PyQt5](https://pypi.org/project/PyQt5/) ```5.13.2```
+- [Requests](https://pypi.org/project/requests/) ```2.22.0```
+- [Pythonping](https://pypi.org/project/pythonping/) ```1.0.8```
