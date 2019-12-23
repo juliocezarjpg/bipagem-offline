@@ -1,13 +1,16 @@
 from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from pythonping import ping
+from mainwindow import Ui_MainWindow
 import sys, json, requests
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('bipador.ui', self)
-        self.show()
+        # uic.loadUi('bipador.ui', self)
+        # self.show()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
         #Botões
         self.btConfirmar = self.findChild(QtWidgets.QPushButton, 'btConfirmar')
@@ -123,11 +126,12 @@ class Ui(QtWidgets.QMainWindow):
                     mensagem = mensagem + i["DESCRICAOERRO"] + '\n'
                     self.apagarItem(self.lvIMEI.findItems(i["NUMIDENTIFICADOR"],QtCore.Qt.MatchExactly)[0])
                     # self.lvIMEI.takeItem(self.lvIMEI.row(self.lvIMEI.findItems(i["NUMIDENTIFICADOR"],QtCore.Qt.MatchExactly)[0]))
-                mensagem = mensagem + '\n Atenção: Esses produtos serão deletados dos itens bipados'
+                mensagem = mensagem + '\n Atenção: Esse(s) produto(s) será(ão) deletado(s) dos itens bipados'
                 self.alerta(mensagem)
             else:
                 self.alerta("Enviado com sucesso!")
-                self.clear()
+                self.persistir()
+                self.limpar()
 
     def cancelar(self):
         self.limpar()
@@ -219,7 +223,21 @@ class Ui(QtWidgets.QMainWindow):
         if cod == '000012': return 'Quick 5.0'
         return (cod + ' Codigo nao encontrado')
 
+    def persistir(self):
+        imei = open(self.tbPedido.text() + " - IMEIs" + ".txt","w+")
+        cm = open(self.tbPedido.text() + " - CMs" + ".txt","w+")
+        for i in self.helper:
+            if i.isdigit():
+                imei.write(i + "\n")
+            else:
+                cm.write(i + "\n")
+        imei.close()
+        cm.close()
+
 app = QtWidgets.QApplication(sys.argv)
-window = Ui()
-app.exec_()
-exit()
+application = Ui()
+application.show()
+sys.exit(app.exec_())
+# window = Ui()
+# app.exec_()
+# exit ()

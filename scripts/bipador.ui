@@ -18,7 +18,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../../../Downloads/Logo Red Mobile aplicação-04.png</normaloff>../../../../../Downloads/Logo Red Mobile aplicação-04.png</iconset>
+    <normaloff>app.ico</normaloff>app.ico</iconset>
   </property>
   <property name="animated">
    <bool>true</bool>
