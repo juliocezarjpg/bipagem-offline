@@ -7,6 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>571</width>
+    <height>575</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -174,6 +175,9 @@
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <widget class="QTableWidget" name="tbDescricao">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <attribute name="horizontalHeaderVisible">
            <bool>false</bool>
           </attribute>
