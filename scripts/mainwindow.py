@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(353, 371)
+        MainWindow.resize(571, 575)
         MainWindow.setAcceptDrops(False)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("app.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -91,6 +91,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.tab_2)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.tbDescricao = QtWidgets.QTableWidget(self.tab_2)
+        self.tbDescricao.setEnabled(False)
         self.tbDescricao.setObjectName("tbDescricao")
         self.tbDescricao.setColumnCount(0)
         self.tbDescricao.setRowCount(0)

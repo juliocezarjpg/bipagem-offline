@@ -78,6 +78,7 @@ class Ui(QtWidgets.QMainWindow):
                 self.tbIMEI.setEnabled(True)
                 self.tbAbas.setEnabled(True)
                 self.lvIMEI.setEnabled(True)
+                self.tbDescricao.setEnabled(True)
                 self.tbAbas.setCurrentIndex(1)
             else: #A nota nao existe
                 self.tbPedido.clear()
@@ -102,13 +103,25 @@ class Ui(QtWidgets.QMainWindow):
             self.tbDescricao.setItem(lin, 2, QTableWidgetItem(str(int(i["QTDITENS"])%20)))
             lin = lin + 1
 
-    def alerta(self, message):
+        header = self.tbDescricao.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        self.tbDescricao.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+
+    def alerta(self, message, cancelar = 0):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QMessageBox.Information)
         msgBox.setText(message)
         msgBox.setWindowTitle("Aviso")
-        msgBox.setStandardButtons(QMessageBox.Ok)
-        returnValue = msgBox.exec()
+        if cancelar:
+            msgBox.setIcon(QMessageBox.Question)
+            msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+            buttonY = msgBox.button(QMessageBox.Yes)
+            buttonY.setText("Sim")
+            buttonC = msgBox.button(QMessageBox.Cancel)
+            buttonC.setText("Cancelar")
+        else:
+            msgBox.setStandardButtons(QMessageBox.Ok)
+        self.returnValue = msgBox.exec()
 
     def enviar(self):
         if self.testarConexao():
@@ -161,9 +174,11 @@ class Ui(QtWidgets.QMainWindow):
             self.lvIMEI.scrollToBottom()
 
     def apagarItem(self, item):
-        self.atualizarQuantidade('remove',item.text())
-        self.helper.remove(item.text())
-        self.lvIMEI.takeItem(self.lvIMEI.row(item))
+        self.alerta("Você realmente deseja apagar o item " + item.text() + " ?", 1)
+        if self.returnValue == 16384: #16384 é o codigo para confirmacao de apagar
+            self.atualizarQuantidade('remove',item.text())
+            self.helper.remove(item.text())
+            self.lvIMEI.takeItem(self.lvIMEI.row(item))
 
     def atualizarQuantidade(self,op,codigo):
         if op == 'add':
@@ -210,17 +225,17 @@ class Ui(QtWidgets.QMainWindow):
         self.helper.clear()
 
     def nome(self,cod):
-        if cod == '000002': return 'Mega Vermelho'
-        if cod == '000003': return 'Mega Azul'
-        if cod == '000004': return 'Mega Amarelo'
-        if cod == '000005': return 'Prime Dourado'
-        if cod == '000006': return 'Prime Preto'
-        if cod == '000007': return 'Prime Prata'
-        if cod == '000008': return 'Fit Vermelho'
-        if cod == '000009': return 'Fit Laranja'
-        if cod == '000010': return 'Fit Amarelo'
-        if cod == '000011': return 'Fit Azul'
-        if cod == '000012': return 'Quick 5.0'
+        if cod == '000002': return 'CEL. RED MOBILE MEGA M010F - PRETO/VERMELHO'
+        if cod == '000003': return 'CEL. RED MOBILE MEGA M010F - PRETO/AZUL'
+        if cod == '000004': return 'CEL. RED MOBILE MEGA M010F - PRETO/AMARELO'
+        if cod == '000005': return 'CEL. RED MOBILE PRIME 2.4 M012F - DOURADO'
+        if cod == '000006': return 'CEL. RED MOBILE PRIME 2.4 M012F - PRETO'
+        if cod == '000007': return 'CEL. RED MOBILE PRIME 2.4 M012F - PRATA'
+        if cod == '000008': return 'CEL. RED MOBILE FIT MUSIC M011F - PRETO/VERMELHO'
+        if cod == '000009': return 'CEL. RED MOBILE FIT MUSIC M011F - PRETO/LARANJA'
+        if cod == '000010': return 'CEL. RED MOBILE FIT MUSIC M011F - PRETO/AMARELO'
+        if cod == '000011': return 'CEL. RED MOBILE FIT MUSIC M011F - PRETO/AZUL'
+        if cod == '000012': return 'SMARTPHONE RED MOBILE QUICK 5.0 S50 - VERMELHO E PRATA'
         return (cod + ' Codigo nao encontrado')
 
     def persistir(self):
