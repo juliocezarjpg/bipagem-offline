@@ -63,7 +63,7 @@ class Ui(QtWidgets.QMainWindow):
         if pedido == '': #Pedido Incorreto
             self.alerta('Pedido incorreto')
         else: #Pedido digitado
-            url = "http://10.66.96.2:8091/rest/controleprodutos/itensnf"
+            url = "http://10.66.96.2:8090/rest/controleprodutos/itensnf"
             payload = "{\"notafiscal\":\"" + self.tbPedido.text().rjust(9,'0') + "\",\"serie\":\"1\"}"
             response = requests.request("POST", url, data=payload)
             pedido = response.text
@@ -125,7 +125,7 @@ class Ui(QtWidgets.QMainWindow):
 
     def enviar(self):
         if self.testarConexao():
-            url = "http://10.66.96.2:8091/rest/controleprodutos/validanumidentificador"
+            url = "http://10.66.96.2:8090/rest/controleprodutos/validanumidentificador"
             payload = '{\"NotaFiscal\":\"' + self.tbPedido.text().rjust(9,'0') + '\",\r\n\"Serie\":\"1\",\r\n\"ListaNumIdentificador\":['
             for imei in self.helper:
                 payload = payload + '\"' + imei + '\",'
