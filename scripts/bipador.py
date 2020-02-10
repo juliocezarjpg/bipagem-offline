@@ -134,12 +134,13 @@ class Ui(QtWidgets.QMainWindow):
             response = requests.request("POST", url, data=payload)
             jResposta = json.loads(response.text)
             mensagem = ""
-            if len(jResposta["LISTANUMIDENTIFICADORERRO"]) > 0:
+            if jResposta.get("LISTANUMIDENTIFICADORERRO"):
+                self.alerta('Existe(m) IMEI(s) com problemas, por favor, apague(os) dos itens bipados.')
                 for i in jResposta["LISTANUMIDENTIFICADORERRO"]:
                     mensagem = mensagem + i["DESCRICAOERRO"] + '\n'
                     self.apagarItem(self.lvIMEI.findItems(i["NUMIDENTIFICADOR"],QtCore.Qt.MatchExactly)[0])
                     # self.lvIMEI.takeItem(self.lvIMEI.row(self.lvIMEI.findItems(i["NUMIDENTIFICADOR"],QtCore.Qt.MatchExactly)[0]))
-                mensagem = mensagem + '\n Atenção: Esse(s) produto(s) será(ão) deletado(s) dos itens bipados'
+                mensagem = mensagem + '\n Atenção: Esse(s) produto(s) foi(rão) deletado(s) dos itens bipados'
                 self.alerta(mensagem)
             else:
                 self.alerta("Enviado com sucesso!")
