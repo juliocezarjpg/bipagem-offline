@@ -301,3 +301,4 @@ sys.exit(app.exec_())
 # window = Ui()
 # app.exec_()
 # exit ()
+# pyinstaller --onefile --noconsole --icon=app.ico bipador.py 
