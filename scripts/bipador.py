@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from pythonping import ping
 from mainwindow import Ui_MainWindow
-import sys, json, requests
+import sys, json, requests, os, shutil
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
@@ -67,11 +67,10 @@ class Ui(QtWidgets.QMainWindow):
             payload = "{\"notafiscal\":\"" + self.tbPedido.text().rjust(9,'0') + "\",\"serie\":\"1\"}"
             response = requests.request("POST", url, data=payload)
             pedido = response.text
-            # pedido = '{"ITENS":[{"CODIGOPRODUTO": "000003","QTDITENS": 2}]}' #Remover depois
-            jPedido = json.loads(pedido)
+            self.jPedido = json.loads(pedido)
 
-            if jPedido["ITENS"][0]["CODIGOPRODUTO"].replace(' ','').isdigit(): #A nota existe
-                self.montarPedido(jPedido)
+            if self.jPedido["ITENS"][0]["CODIGOPRODUTO"].replace(' ','').isdigit(): #A nota existe
+                self.montarPedido()
                 self.btCancelar.setEnabled(True)
                 self.btConfirmar.setEnabled(False)
                 self.tbPedido.setEnabled(False)
@@ -82,25 +81,27 @@ class Ui(QtWidgets.QMainWindow):
                 self.tbAbas.setCurrentIndex(1)
             else: #A nota nao existe
                 self.tbPedido.clear()
-                self.alerta(jPedido["ITENS"][0]["CODIGOPRODUTO"])
+                self.alerta(self.jPedido["ITENS"][0]["CODIGOPRODUTO"])
 
-    def montarPedido(self,jPedido):
+    def montarPedido(self):
         self.total = 0
-        for pedido in jPedido["ITENS"]:
+        for pedido in self.jPedido["ITENS"]:
             self.total = self.total + pedido["QTDITENS"]
         self.pbProgresso.setMaximum(self.total)
 
-        self.tbDescricao.setRowCount(len(jPedido["ITENS"])+1)
-        self.tbDescricao.setColumnCount(3)
+        self.tbDescricao.setRowCount(len(self.jPedido["ITENS"])+1)
+        self.tbDescricao.setColumnCount(4)
         self.tbDescricao.setItem(0, 0, QTableWidgetItem('Item(s)'))
         self.tbDescricao.setItem(0, 1, QTableWidgetItem('Caixa(s)'))
         self.tbDescricao.setItem(0, 2, QTableWidgetItem('Aparelho(s)'))
+        self.tbDescricao.setItem(0, 3, QTableWidgetItem('Total Bipado(s)'))
 
         lin = 1
-        for i in jPedido["ITENS"]:
+        for i in self.jPedido["ITENS"]:
             self.tbDescricao.setItem(lin, 0, QTableWidgetItem(self.nome(i["CODIGOPRODUTO"].replace(' ',''))))
             self.tbDescricao.setItem(lin, 1, QTableWidgetItem(str(int(int(i["QTDITENS"])/20))))
             self.tbDescricao.setItem(lin, 2, QTableWidgetItem(str(int(i["QTDITENS"])%20)))
+            self.tbDescricao.setItem(lin, 3, QTableWidgetItem('0'))
             lin = lin + 1
 
         header = self.tbDescricao.horizontalHeader()
@@ -161,18 +162,20 @@ class Ui(QtWidgets.QMainWindow):
 
     def enviarItem(self):
         self.tbAbas.setCurrentIndex(0)
-        if self.tbIMEI.text() in self.helper:
+        if self.tbIMEI.text() in self.helper: #Testa se nao teve antes
             self.alerta('O item ' + self.tbIMEI.text() + ' já foi adicionado anteriormente')
             self.tbIMEI.clear()
-        elif (self.pbProgresso.maximum() - self.pbProgresso.value() < 20 and not(self.tbIMEI.text().isdigit())):
-            self.alerta('O item ' + self.tbIMEI.text() + ' não pode ser adicionado, pois ultrapassara a quantidade de aparelhos do pedido')
-            self.tbIMEI.clear()
         else:
-            self.atualizarQuantidade('add', self.tbIMEI.text())
-            self.lvIMEI.addItem(self.tbIMEI.text())
-            self.helper.append(self.tbIMEI.text())
-            self.tbIMEI.clear()
-            self.lvIMEI.scrollToBottom()
+            self.checarIMEI(self.tbIMEI.text())
+            if self.totalAdicionar + self.qtdAtual > self.totalPedido:
+                self.alerta('O item ' + self.tbIMEI.text() + ' não pode ser adicionado, pois ultrapassará a quantidade de aparelhos do pedido')
+                self.tbIMEI.clear()
+            elif self.totalAdicionar > 0:
+                self.atualizarQuantidade('add', self.tbIMEI.text())
+                self.lvIMEI.addItem(self.tbIMEI.text())
+                self.helper.append(self.tbIMEI.text())
+                self.tbIMEI.clear()
+                self.lvIMEI.scrollToBottom()
 
     def apagarItem(self, item):
         self.alerta("Você realmente deseja apagar o item " + item.text() + " ?", 1)
@@ -181,23 +184,31 @@ class Ui(QtWidgets.QMainWindow):
             self.helper.remove(item.text())
             self.lvIMEI.takeItem(self.lvIMEI.row(item))
 
-    def atualizarQuantidade(self,op,codigo):
+    def atualizarQuantidade(self,op,IMEI):
         if op == 'add':
             # if self.tbIMEI.text().isdigit():
-            if codigo.isdigit():
+            if IMEI.isdigit():
                 self.lbTotalAparelho.setText(str(int(self.lbTotalAparelho.text())+1))
                 self.lbTotal.setText(str(int(self.lbTotal.text())+1))
+                self.tbDescricao.setItem(self.linha, 3, QTableWidgetItem(str(self.qtdAtual + 1))) #atualiza quantidade
             else:
                 self.lbTotalCaixa.setText(str(int(self.lbTotalCaixa.text())+1))
                 self.lbTotal.setText(str(int(self.lbTotal.text())+20))
+                self.tbDescricao.setItem(self.linha, 3, QTableWidgetItem(str(self.qtdAtual + 20))) #atualiza quantidade
+
 
         elif op == 'remove':
-            if codigo[0].isdigit():
+            self.checarIMEI(IMEI)
+            if IMEI[0].isdigit():
                 self.lbTotalAparelho.setText(str(int(self.lbTotalAparelho.text())-1))
                 self.lbTotal.setText(str(int(self.lbTotal.text())-1))
+                self.tbDescricao.setItem(self.linha, 3, QTableWidgetItem(str(self.qtdAtual - 1))) #atualiza quantidade
+
             else:
                 self.lbTotalCaixa.setText(str(int(self.lbTotalCaixa.text())-1))
                 self.lbTotal.setText(str(int(self.lbTotal.text())-20))
+                self.tbDescricao.setItem(self.linha, 3, QTableWidgetItem(str(self.qtdAtual - 20))) #atualiza quantidade
+
 
         self.pbProgresso.setValue(int(self.lbTotal.text()))
         if self.pbProgresso.value() == self.pbProgresso.maximum():
@@ -206,6 +217,28 @@ class Ui(QtWidgets.QMainWindow):
         else:
             self.tbIMEI.setEnabled(True)
             self.btEnviar.setEnabled(False)
+
+    def checarIMEI(self, IMEI):
+        if self.testarConexao():
+            url = "http://10.66.96.2:8090/rest/controleprodutos/modeloaparelho"
+            payload = "{\"NumIdentificador\":\""+IMEI+"\"}"
+            response = requests.request("POST", url, data = payload)
+            jModelo = json.loads(response.text) #Pega o modelo com o IMEI
+            self.totalPedido, self.qtdAtual, self.totalAdicionar = 0, 0, 0
+            if (jModelo['CODIGO']): #Testa se o IMEI existe
+                for i in range(len(self.jPedido["ITENS"])):
+                    if self.tbDescricao.item(i+1,0).text() == self.nome(jModelo['CODIGO']): #Achou o aparelho no pedido
+                        self.totalPedido = int(self.tbDescricao.item(i+1,2).text()) + 20*int(self.tbDescricao.item(i+1,1).text())
+                        self.qtdAtual = int(self.tbDescricao.item(i+1,3).text())
+                        self.totalAdicionar = 1 if self.tbIMEI.text().isdigit() else 20
+                        self.linha = i + 1
+                        break
+                if (self.totalAdicionar == 0):
+                    self.alerta('O IMEI ' + self.tbIMEI.text() + ' não faz parte do pedido')
+                    self.tbIMEI.clear()
+            else:
+                self.alerta('O IMEI ' + self.tbIMEI.text() + ' não é válido')
+                self.tbIMEI.clear()
 
     def limpar(self):
         self.btCancelar.setEnabled(False)
@@ -247,8 +280,19 @@ class Ui(QtWidgets.QMainWindow):
                 imei.write(i + "\n")
             else:
                 cm.write(i + "\n")
+        imei.write("Chave: " + str(int(self.tbPedido.text())*24 + 23))
+        cm.write("Chave: " + str(int(self.tbPedido.text())*23 + 24))
         imei.close()
         cm.close()
+
+        dir = "C:\\Bipador\\Backup\\"
+        try:
+            os.makedirs(dir)
+        except:
+            pass
+
+        shutil.copy2(self.tbPedido.text() + " - IMEIs" + ".txt", dir)
+        shutil.copy2(self.tbPedido.text() + " - IMEIs" + ".txt", dir)
 
 app = QtWidgets.QApplication(sys.argv)
 application = Ui()
